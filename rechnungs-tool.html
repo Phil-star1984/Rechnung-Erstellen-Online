@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A4-druckoptimiertes deutsches Rechnungserstellungstool</title>
+    <style>
+      body {
+        font-family: Roboto, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 80px;
+        background-color: rgb(90, 101, 134);
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #f4f4f4;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 5px 16px rgba(0, 0, 0, 0.3);
+      }
+
+      /* form {
+            width: 100%;
+        } */
+
+      h1 {
+        text-align: center;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        box-sizing: border-box;
+      }
+      button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      #rechnung {
+        background-color: white;
+        padding: 20px;
+        margin-top: 20px;
+        border: 1px solid #ddd;
+        position: relative;
+        height: 1123px; /* A4 height in pixels at 96 DPI */
+        width: 794px; /* A4 width in pixels at 96 DPI */
+        box-sizing: border-box;
+        display: none;
+      }
+      table {
+        margin-top: 1rem;
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+      .dienstleistung-container {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin-top: 10px;
+      }
+      .remove-dienstleistung {
+        background-color: #f44336;
+        margin-top: 5px;
+      }
+      .add-dienstleistung {
+        background-color: #008cba;
+      }
+      #logo {
+        position: absolute;
+        top: 10mm;
+        right: 10mm;
+        max-width: 200px;
+        max-height: 100px;
+      }
+      #absenderzeile {
+        position: absolute;
+        top: 45mm;
+        right: 10mm;
+        /* padding: 5mm; */
+        text-align: right;
+        height: 45mm;
+        font-size: 0.8rem;
+        /* border-bottom: 1px solid #000; */
+        width: 50mm;
+      }
+      #adressfenster {
+        position: absolute;
+        top: 45mm;
+        left: 20mm;
+        width: 85mm;
+        height: 45mm;
+        /* padding: 5mm; */
+        font-size: 0.8rem;
+      }
+      #rechnungskopf {
+        position: absolute;
+        top: 90mm;
+        left: 20mm;
+        width: calc(100% - 40mm);
+      }
+
+      #rechnungskopf p {
+        margin: 0;
+      }
+      #rechnungsdetails {
+        position: absolute;
+        top: 130mm;
+        left: 20mm;
+        width: calc(100% - 40mm);
+      }
+      #bankDatenText {
+        position: absolute;
+        bottom: 10mm;
+        left: 20mm;
+        font-size: 10pt;
+      }
+
+      #eigeneAdresseText {
+        display: none;
+        position: absolute;
+        bottom: 20mm;
+        left: 20mm;
+        font-size: 10pt;
+      }
+
+      #printButton {
+        display: none;
+      }
+
+      @media print {
+        body,
+        html {
+          margin: 0;
+          padding: 0;
+          width: 210mm !important;
+          height: 297mm !important;
+        }
+
+        /* Verstecke nur die Eingabeformulare und andere nicht benötigte Elemente */
+        form,
+        .add-dienstleistung,
+        #printButton,
+        h1 {
+          display: none !important;
+        }
+
+        /* Sicherstellen, dass der Rechnungscontainer angezeigt wird */
+        #rechnung {
+          display: block !important;
+          width: 210mm !important;
+          height: 297mm !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border: none !important;
+          box-shadow: none !important;
+          page-break-after: always;
+        }
+
+        /* Verhindere das Ausblenden der gesamten Containerklasse */
+        .container {
+          display: block !important;
+        }
+      }
+
+      @media screen {
+        #rechnung {
+          width: 210mm;
+          height: 297mm;
+          margin: 20px auto;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Rechnung Online Erstellen</h1>
+      <form id="rechnungsForm">
+        <label for="rechnungsnummer">Rechnungsnummer:</label>
+        <input
+          type="text"
+          id="rechnungsnummer"
+          name="rechnungsnummer"
+          required
+        />
+
+        <label for="logoUrl">Logo URL:</label>
+        <input type="url" id="logoUrl" name="logoUrl" />
+
+        <label for="eigeneAdresse">Ihre Adresse:</label>
+        <textarea
+          id="eigeneAdresse"
+          name="eigeneAdresse"
+          rows="4"
+          required
+        ></textarea>
+
+        <label for="bankDaten">Ihre Bankdaten:</label>
+        <textarea id="bankDaten" name="bankDaten" rows="4" required></textarea>
+
+        <label for="kundenAdresse">Kundenadresse:</label>
+        <textarea
+          id="kundenAdresse"
+          name="kundenAdresse"
+          rows="4"
+          required
+        ></textarea>
+
+        <div id="dienstleistungen">
+          <div class="dienstleistung-container">
+            <label for="dienstleistung0">Dienstleistung:</label>
+            <textarea
+              id="dienstleistung0"
+              name="dienstleistung0"
+              rows="2"
+              required
+            ></textarea>
+
+            <label for="betrag0">Betrag (in €):</label>
+            <input
+              type="number"
+              id="betrag0"
+              name="betrag0"
+              step="0.01"
+              required
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="add-dienstleistung"
+          onclick="addDienstleistung()"
+        >
+          Weitere Dienstleistung hinzufügen
+        </button>
+
+        <label for="mwst">Mehrwertsteuer:</label>
+        <select id="mwst" name="mwst">
+          <option value="7">7%</option>
+          <option value="19">19%</option>
+        </select>
+
+        <button type="submit">Rechnung erstellen</button>
+      </form>
+
+      <div id="rechnung">
+        <img id="logo" src="" alt="Firmenlogo" />
+        <div id="absenderzeile"></div>
+        <div id="adressfenster"></div>
+        <div id="rechnungskopf">
+          <h2>Rechnung</h2>
+          <p>
+            <strong>Rechnungsnummer:</strong>
+            <span id="rechnungsnummerText"></span>
+          </p>
+          <p><strong>Datum:</strong> <span id="datum"></span></p>
+        </div>
+        <div id="rechnungsdetails">
+          <table>
+            <tr>
+              <th>Service</th>
+              <th>Betrag</th>
+            </tr>
+            <tbody id="dienstleistungenTabelle"></tbody>
+            <tr>
+              <td>Zwischensumme</td>
+              <td id="zwischensumme"></td>
+            </tr>
+            <tr>
+              <td>Mehrwertsteuer (<span id="mwstSatz"></span>%)</td>
+              <td id="mwstBetrag"></td>
+            </tr>
+            <tr>
+              <th>Gesamtbetrag</th>
+              <th id="gesamtbetrag"></th>
+            </tr>
+          </table>
+        </div>
+        <div id="eigeneAdresseText"></div>
+        <div id="bankDatenText"></div>
+      </div>
+      <button id="printButton" onclick="printRechnung()">
+        Rechnung drucken
+      </button>
+    </div>
+
+    <script>
+      let dienstleistungCount = 1;
+
+      function addDienstleistung() {
+        const container = document.createElement("div");
+        container.className = "dienstleistung-container";
+        container.innerHTML = `
+                <label for="dienstleistung${dienstleistungCount}">Dienstleistung:</label>
+                <textarea id="dienstleistung${dienstleistungCount}" name="dienstleistung${dienstleistungCount}" rows="2" required></textarea>
+                
+                <label for="betrag${dienstleistungCount}">Betrag (in €):</label>
+                <input type="number" id="betrag${dienstleistungCount}" name="betrag${dienstleistungCount}" step="0.01" required>
+                
+                <button type="button" class="remove-dienstleistung" onclick="removeDienstleistung(this)">Entfernen</button>
+            `;
+        document.getElementById("dienstleistungen").appendChild(container);
+        dienstleistungCount++;
+      }
+
+      function removeDienstleistung(button) {
+        button.parentElement.remove();
+      }
+
+      function printRechnung() {
+        const rechnung = document.getElementById("rechnung");
+
+        if (rechnung.style.display === "none") {
+          alert(
+            "Bitte erstellen Sie zuerst die Rechnung, bevor Sie sie drucken."
+          );
+          return;
+        }
+
+        // Verzögerung, um sicherzustellen, dass der Inhalt geladen ist
+        setTimeout(function () {
+          window.print();
+        }, 100); // 100 ms Verzögerung
+      }
+
+      const formatKommaText = (text) => {
+        let splitText = text.split(",");
+        let trimText = splitText.map((el) => el.trim());
+        return trimText.join("<br>");
+      };
+
+      document
+        .getElementById("rechnungsForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const logoUrl = document.getElementById("logoUrl").value;
+          const rechnungsnummer =
+            document.getElementById("rechnungsnummer").value;
+          const eigeneAdresse = document.getElementById("eigeneAdresse").value;
+          const eigeneAdresseUmgewandelt = formatKommaText(eigeneAdresse);
+          /* const adressArray = eigeneAdresse.split(",").map((item) => item.trim())
+          const eigeneAdresseUmgewandelt = adressArray.join("<br>")
+          console.log(typeof(eigeneAdresseUmgewandelt)) */
+          const kundenAdresse = document.getElementById("kundenAdresse").value;
+          const kundenAdresseUmgewandelt = formatKommaText(kundenAdresse);
+          const mwstSatz = parseFloat(document.getElementById("mwst").value);
+          const bankDaten = document.getElementById("bankDaten").value;
+          const bankDatenUmgewandelt = formatKommaText(bankDaten);
+
+          let gesamtbetrag = 0;
+          const dienstleistungenTabelle = document.getElementById(
+            "dienstleistungenTabelle"
+          );
+          dienstleistungenTabelle.innerHTML = "";
+
+          for (let i = 0; i < dienstleistungCount; i++) {
+            const dienstleistung = document.getElementById(
+              `dienstleistung${i}`
+            );
+            const betrag = document.getElementById(`betrag${i}`);
+            if (dienstleistung && betrag) {
+              const betragWert = parseFloat(betrag.value);
+              gesamtbetrag += betragWert;
+              const row = dienstleistungenTabelle.insertRow();
+              row.insertCell(0).textContent = `${i + 1}. ${
+                dienstleistung.value
+              }`;
+              row.insertCell(1).textContent = betragWert.toFixed(2) + " €";
+            }
+          }
+
+          const mwstBetrag = gesamtbetrag * (mwstSatz / 100);
+          const gesamtbetragMitMwst = gesamtbetrag + mwstBetrag;
+
+          document.getElementById("logo").src = logoUrl;
+          document.getElementById("absenderzeile").innerHTML =
+            eigeneAdresseUmgewandelt; // Erste Zeile der eigenen Adresse als Absenderzeile
+          document.getElementById("rechnungsnummerText").textContent =
+            rechnungsnummer;
+          document.getElementById("datum").textContent =
+            new Date().toLocaleDateString("de-DE");
+          document.getElementById("adressfenster").innerHTML =
+            kundenAdresseUmgewandelt;
+          document.getElementById("eigeneAdresseText").textContent =
+            eigeneAdresse;
+          document.getElementById("bankDatenText").innerHTML =
+            bankDatenUmgewandelt;
+          document.getElementById("zwischensumme").textContent =
+            gesamtbetrag.toFixed(2) + " €";
+          document.getElementById("mwstSatz").textContent = mwstSatz;
+          document.getElementById("mwstBetrag").textContent =
+            mwstBetrag.toFixed(2) + " €";
+          document.getElementById("gesamtbetrag").textContent =
+            gesamtbetragMitMwst.toFixed(2) + " €";
+
+          document.getElementById("rechnung").style.display = "block";
+          document.getElementById("printButton").style.display = "block";
+        });
+    </script>
+  </body>
+</html>

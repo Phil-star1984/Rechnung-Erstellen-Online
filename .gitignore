@@ -1,0 +1,8 @@
+# Alle Dateien ignorieren
+*
+
+# rechnungs-tool.html nicht ignorieren
+!rechnungs-tool.html
+
+# Gitignore-Datei nicht ignorieren
+!.gitignore
