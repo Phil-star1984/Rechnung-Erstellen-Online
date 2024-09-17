@@ -2,7 +2,7 @@
 *
 
 # rechnungs-tool.html nicht ignorieren
-!rechnungs-tool.html
+!index.html
 
 # Gitignore-Datei nicht ignorieren
 !.gitignore
